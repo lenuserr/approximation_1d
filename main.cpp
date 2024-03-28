@@ -22,7 +22,7 @@ int main (int argc, char *argv[]) {
     }
 
     action = tool_bar->addAction ("&Change function", graph_area, SLOT (change_func ()));
-    action->setShortcut (QString ("Ctrl+C"));
+    action->setShortcut (QString ("0"));
 
     action = tool_bar->addAction ("E&xit", window, SLOT (close ()));
     action->setShortcut (QString ("Ctrl+X"));

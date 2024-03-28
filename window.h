@@ -8,7 +8,7 @@ class Window : public QWidget {
 
 private:
     int func_id;
-    const char *f_name;
+    const char* f_name;
     double a;
     double b;
     int n;

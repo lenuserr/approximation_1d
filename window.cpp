@@ -76,31 +76,31 @@ void Window::change_func () {
 
     switch (func_id) {
         case 0:
-            f_name = "f (x) = 1";
+            f_name = "k = 0 f (x) = 1";
             f = f_0;
             break;
         case 1:
-            f_name = "f (x) = x";
+            f_name = "k = 1 f (x) = x";
             f = f_1;
             break;
         case 2:
-            f_name = "f (x) = x * x";
+            f_name = "k = 2 f (x) = x * x";
             f = f_2;
             break;
         case 3:
-            f_name = "f (x) = x * x * x";
+            f_name = "k = 3 f (x) = x * x * x";
             f = f_3;
             break;
         case 4:
-            f_name = "f (x) = x * x * x * x";
+            f_name = "k = 4 f (x) = x * x * x * x";
             f = f_4;
             break;
         case 5:
-            f_name = "f (x) = exp(x)";
+            f_name = "k = 5 f (x) = exp(x)";
             f = f_5;
             break;
         case 6:
-            f_name = "f (x) = 1 / (25*x*x + 1)";
+            f_name = "k = 6 f (x) = 1 / (25*x*x + 1)";
             f = f_6;
             break;
     }
@@ -109,6 +109,9 @@ void Window::change_func () {
 
 QPointF Window::l2g (double x_loc, double y_loc, double y_min, double y_max) {
     double x_gl = (x_loc - a) / (b - a) * width ();
+    if (std::abs(y_max - y_min) < 1e-6) {
+        return QPointF (x_gl, 0.5*y_loc * height () );
+    }
     double y_gl = (y_max - y_loc) / (y_max - y_min) * height ();
     return QPointF (x_gl, y_gl);
 }
@@ -132,9 +135,15 @@ void Window::paintEvent (QPaintEvent * /* event */) {
     QVector<double> alpha(n);
     CalculateAlpha(n, a, b, x, y, &alpha);
 
-    double delta_x = (b - a) / 20; // по 20 точкам пока порисую
-    // calculate min and max for Pf
     /*
+    for (int i = 0; i < n; ++i) {
+        printf("%lf ", alpha[i]);
+    }
+    printf("\n");
+    */
+
+    double delta_x = (b - a) / 500;
+    // calculate min and max for Pf
     x1 = a;
     y1 = Pf(n, x1, a, b, alpha);
     max_y = min_y = y1;
@@ -148,20 +157,6 @@ void Window::paintEvent (QPaintEvent * /* event */) {
     y2 = Pf(n, x2, a, b, alpha);
     max_y = std::max(max_y, y2);
     min_y = std::min(min_y, y2);
-
-    delta_y = 0.01 * (max_y - min_y);
-    min_y -= delta_y;
-    max_y += delta_y;
-    */
-
-    // calculate min and max for current function
-    max_y = min_y = 0;
-    for (auto v : y) {
-        if (v < min_y)
-            min_y = v;
-        if (v > max_y)
-            max_y = v;
-    }
 
     delta_y = 0.01 * (max_y - min_y);
     min_y -= delta_y;
@@ -188,5 +183,8 @@ void Window::paintEvent (QPaintEvent * /* event */) {
 
     // render function name
     painter.setPen ("blue");
-    painter.drawText (0, 20, f_name);
+    double max_module_f = std::max(std::abs(min_y), std::abs(max_y));
+    std::string text = "max|f| = " + std::to_string(max_module_f);
+    painter.drawText (5, 20, f_name);
+    painter.drawText(5, 40, text.c_str());
 }
