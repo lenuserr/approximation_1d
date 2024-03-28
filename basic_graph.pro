@@ -1,5 +1,7 @@
 QT += widgets
 
-HEADERS       = window.h
+HEADERS       = window.h \
+                calc_func.h
 SOURCES       = main.cpp \
-                window.cpp
+                window.cpp \
+                calc_func.cpp

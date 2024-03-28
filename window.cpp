@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include "window.h"
+#include "calc_func.h"
 
 #define L2G(X,Y) (l2g ((X), (Y), min_y, max_y))
 
@@ -59,56 +60,14 @@ int Window::parse_command_line (int argc, char *argv[]) {
         || k < 0 || k > 6)
         return -2;
 
+    x.reserve(n);
+    for (int m = 1; m <= n; ++m) {
+        x.push_back(0.5*(a + b) + 0.5*(b - a)*cos(M_PI*0.5*(2*m - 1) / n));
+    }
+
     func_id = k - 1;
     change_func();
     return 0;
-}
-
-double Window::Talpha(int n, double x, double y, QVector<double>* alpha) {
-    double T0 = 1;
-    double T1 = (2*x - (b + a)) / (b - a);
-    (*alpha)[0] += y;
-    if (n == 1) {
-        return T0;
-    } else if (n == 2) {
-        (*alpha)[1] += T1 * y;
-        return T1;
-    }
-
-    (*alpha)[1] += T1 * y;
-    double var = T1;
-    double res = 0;
-    for (int k = 2; k < n; ++k) {
-        res = 2*var*T1 - T0;
-        T0 = T1;
-        T1 = res;
-        (*alpha)[k] += res * y;
-    }
-
-    return res;
-}
-
-double Window::Pf(int n, double x, const QVector<double>& alpha) {
-    double T0 = 1;
-    double T1 = (2*x - (b + a)) / (b - a);
-    double Pf_x = alpha[0] * T0;
-    if (n == 1) {
-        return Pf_x;
-    } else if (n == 2) {
-        return Pf_x + alpha[1] * T1;
-    }
-
-    Pf_x += alpha[1] * T1;
-    double var = T1;
-    double res = 0;
-    for (int k = 2; k < n; ++k) {
-        res = 2*var*T1 - T0;
-        T0 = T1;
-        T1 = res;
-        Pf_x += alpha[k] * res;
-    }
-
-    return Pf_x;
 }
 
 /// change current function for drawing
@@ -157,7 +116,6 @@ QPointF Window::l2g (double x_loc, double y_loc, double y_min, double y_max) {
 /// render graph
 void Window::paintEvent (QPaintEvent * /* event */) {
     QPainter painter (this);
-    QVector<double> x(n), y(n), alpha(n);
     double x1, x2, y1, y2;
     double max_y, min_y;
     double delta_y;
@@ -166,11 +124,35 @@ void Window::paintEvent (QPaintEvent * /* event */) {
 
     painter.setPen (pen_black);
 
-    for (int m = 1; m <= n; ++m) {
-        // каждый раз одни и те же x вычисляются, ну лан пофиг, незначительно, потом если что исправлю
-        x[m-1] = 0.5*(a + b) + 0.5*(b - a)*cos(M_PI*0.5*(2*m - 1) / n);
-        y[m-1] = f(x[m-1]);
+    QVector<double> y(n);
+    for (int i = 0; i < n; ++i) {
+        y[i] = f(x[i]);
     }
+
+    QVector<double> alpha(n);
+    CalculateAlpha(n, a, b, x, y, &alpha);
+
+    double delta_x = (b - a) / 20; // по 20 точкам пока порисую
+    // calculate min and max for Pf
+    /*
+    x1 = a;
+    y1 = Pf(n, x1, a, b, alpha);
+    max_y = min_y = y1;
+    for (x2 = x1 + delta_x; x2 - b < 1.e-6; x2 += delta_x) {
+      y2 = Pf(n, x2, a, b, alpha);
+      max_y = std::max(max_y, y2);
+      min_y = std::min(min_y, y2);
+      x1 = x2, y1 = y2;
+    }
+    x2 = b;
+    y2 = Pf(n, x2, a, b, alpha);
+    max_y = std::max(max_y, y2);
+    min_y = std::min(min_y, y2);
+
+    delta_y = 0.01 * (max_y - min_y);
+    min_y -= delta_y;
+    max_y += delta_y;
+    */
 
     // calculate min and max for current function
     max_y = min_y = 0;
@@ -185,34 +167,18 @@ void Window::paintEvent (QPaintEvent * /* event */) {
     min_y -= delta_y;
     max_y += delta_y;
 
-    for (int j = 0; j < n; ++j) {
-        Talpha(n, x[j], y[j], &alpha);
-    }
-
-    alpha[0] /= n;
-    for (int i = 1; i < n; ++i) {
-        alpha[i] *= 2;
-        alpha[i] /= n;
-    }
-
-    for (int i = 0; i < n; ++i) {
-        printf("%lf ", alpha[i]);
-    }
-    printf("\n");
-
     // draw approximated line for graph
-    double delta_x = (b - a) / 20; // по 20 точкам пока порисую
     x1 = a;
-    y1 = Pf(n, x1, alpha);
+    y1 = Pf(n, x1, a, b, alpha);
     for (x2 = x1 + delta_x; x2 - b < 1.e-6; x2 += delta_x) {
-      y2 = Pf(n, x2, alpha);
+      y2 = Pf(n, x2, a, b, alpha);
       // local coords are converted to draw coords
       painter.drawLine (L2G(x1, y1), L2G(x2, y2));
 
       x1 = x2, y1 = y2;
     }
     x2 = b;
-    y2 = Pf(n, x2, alpha);
+    y2 = Pf(n, x2, a, b, alpha);
     painter.drawLine (L2G(x1, y1), L2G(x2, y2));
 
     // draw axis

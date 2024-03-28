@@ -1,8 +1,7 @@
 #ifndef WINDOW_H
 #define WINDOW_H
-
+// 14:25. Выполняю программные требования по списку.
 #include <QtWidgets/QtWidgets>
-#include <QVector>
 
 class Window : public QWidget {
     Q_OBJECT
@@ -15,6 +14,7 @@ private:
     int n;
     int k;
     double (*f) (double);
+    QVector<double> x;
 
 public:
     Window (QWidget *parent);
@@ -23,8 +23,6 @@ public:
     QSize sizeHint () const;
 
     int parse_command_line (int argc, char *argv[]);
-    double Talpha(int n, double x, double y, QVector<double>* alpha);
-    double Pf(int n, double x, const QVector<double>& alpha);
      QPointF l2g (double x_loc, double y_loc, double y_min, double y_max);
 public slots:
     void change_func ();
