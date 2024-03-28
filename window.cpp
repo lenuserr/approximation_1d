@@ -1,4 +1,4 @@
-
+// 21:12. 28.03.24. 3 hours coding let's go.
 #include <QPainter>
 #include <stdio.h>
 
@@ -60,20 +60,12 @@ int Window::parse_command_line (int argc, char *argv[]) {
         || k < 0 || k > 6)
         return -2;
 
-    x.reserve(n);
-    for (int m = 1; m <= n; ++m) {
-        x.push_back(0.5*(a + b) + 0.5*(b - a)*cos(M_PI*0.5*(2*m - 1) / n));
-    }
-
     func_id = k - 1;
-    change_func();
+    next_func();
     return 0;
 }
 
-/// change current function for drawing
-void Window::change_func () {
-    func_id = (func_id + 1) % 7;
-
+void Window::select_f() {
     switch (func_id) {
         case 0:
             f_name = "k = 0 f (x) = 1";
@@ -104,16 +96,48 @@ void Window::change_func () {
             f = f_6;
             break;
     }
-    update ();
 }
 
 QPointF Window::l2g (double x_loc, double y_loc, double y_min, double y_max) {
     double x_gl = (x_loc - a) / (b - a) * width ();
-    if (std::abs(y_max - y_min) < 1e-6) {
-        return QPointF (x_gl, 0.5*y_loc * height () );
-    }
     double y_gl = (y_max - y_loc) / (y_max - y_min) * height ();
     return QPointF (x_gl, y_gl);
+}
+
+void Window::previous_func () {
+    func_id = (func_id - 1) % 7;
+    if (!func_id) { func_id = 6; } // потом константу отрисую нормально
+
+    select_f();
+    update();
+}
+
+void Window::next_func () {
+    func_id = (func_id + 1) % 7;
+    if (!func_id) { func_id = 1; }
+
+    select_f();
+    update();
+}
+
+void Window::increase_n() {
+    n *= 2;
+    update();
+}
+
+void Window::decrease_n() {
+    n /= 2;
+    update();
+}
+
+void Window::increase_f() {
+    p += 1;
+    update();
+}
+
+void Window::decrease_f() {
+    p -= 1;
+    update();
 }
 
 /// render graph
@@ -127,22 +151,21 @@ void Window::paintEvent (QPaintEvent * /* event */) {
 
     painter.setPen (pen_black);
 
-    QVector<double> y(n);
-    for (int i = 0; i < n; ++i) {
-        y[i] = f(x[i]);
+    QVector<double> x(n), y(n);
+    max_y = std::abs(f(0.5*(a + b) + 0.5*(b - a)*cos(M_PI*0.5 / n)));
+    for (int m = 1; m <= n; ++m) {
+        x[m-1] = 0.5*(a + b) + 0.5*(b - a)*cos(M_PI*0.5*(2*m - 1) / n);
+        y[m-1] = f(x[m-1]);
+        max_y = std::max(max_y, std::abs(y[m-1]));
     }
+
+    y[n/2] += p*0.1*max_y;
 
     QVector<double> alpha(n);
     CalculateAlpha(n, a, b, x, y, &alpha);
 
-    /*
-    for (int i = 0; i < n; ++i) {
-        printf("%lf ", alpha[i]);
-    }
-    printf("\n");
-    */
-
-    double delta_x = (b - a) / 500;
+    int N = 1000; // N точек для рисования.
+    double delta_x = (b - a) / N;
     // calculate min and max for Pf
     x1 = a;
     y1 = Pf(n, x1, a, b, alpha);
@@ -184,7 +207,11 @@ void Window::paintEvent (QPaintEvent * /* event */) {
     // render function name
     painter.setPen ("blue");
     double max_module_f = std::max(std::abs(min_y), std::abs(max_y));
-    std::string text = "max|f| = " + std::to_string(max_module_f);
+    std::string text1 = "max|f| = " + std::to_string(max_module_f);
+    std::string text2 = "n = " + std::to_string(n);
+    std::string text3 = "p = " + std::to_string(p);
     painter.drawText (5, 20, f_name);
-    painter.drawText(5, 40, text.c_str());
+    painter.drawText(5, 40, text1.c_str());
+    painter.drawText(5, 60, text2.c_str());
+    painter.drawText(5, 80, text3.c_str());
 }

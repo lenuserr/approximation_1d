@@ -21,8 +21,23 @@ int main (int argc, char *argv[]) {
         return -1;
     }
 
-    action = tool_bar->addAction ("&Change function", graph_area, SLOT (change_func ()));
+    action = tool_bar->addAction ("&9 Previous func", graph_area, SLOT (previous_func ()));
+    action->setShortcut (QString ("9"));
+
+    action = tool_bar->addAction ("&0 Next func", graph_area, SLOT (next_func ()));
     action->setShortcut (QString ("0"));
+
+    action = tool_bar->addAction ("&4 Increase n", graph_area, SLOT (increase_n ()));
+    action->setShortcut (QString ("4"));
+
+    action = tool_bar->addAction ("&5 Decrease n", graph_area, SLOT (decrease_n ()));
+    action->setShortcut (QString ("5"));
+
+    action = tool_bar->addAction ("&6 Increase f", graph_area, SLOT (increase_f ()));
+    action->setShortcut (QString("6"));
+
+    action = tool_bar->addAction ("&7 Decrease f", graph_area, SLOT (decrease_f ()));
+    action->setShortcut (QString("7"));
 
     action = tool_bar->addAction ("E&xit", window, SLOT (close ()));
     action->setShortcut (QString ("Ctrl+X"));
