@@ -1,4 +1,3 @@
-// 21:12. 28.03.24. 3 hours coding let's go.
 #include <QPainter>
 #include <stdio.h>
 
@@ -156,7 +155,7 @@ void Window::next_func () {
 }
 
 void Window::change_graph() {
-    n_graph = (n_graph + 1) % 2;
+    n_graph = (n_graph + 1) % 3;
     update();
 }
 
@@ -196,10 +195,6 @@ void Window::decrease_f() {
 
 void Window::draw_spline(const QVector<double>& x) {
     QPainter painter (this);
-    double x1, x2, y1, y2;
-    double max_y, min_y;
-    int N = 1000;
-    double delta_y, delta_x = (b - a) / N;
     QPen pen_black(Qt::black, 0, Qt::SolidLine);
     QPen pen_red(Qt::red, 0, Qt::SolidLine);
 
@@ -214,9 +209,56 @@ void Window::draw_spline(const QVector<double>& x) {
     construct_matrix(n, f, df, x, left_d, main_d, right_d, B);
     solution(n, main_d, left_d, right_d, B, d);
 
+    double x1, x2, y1, y2;
+    double max_y, min_y;
+    int N = 1000;
+    double delta_y, delta_x = (b - a) / N;
 
-    double pt = (a + b) / 2;
-    Sf(double pt, int n, const QVector<double>& x, double (*f) (double), double* d)
+    // calculate min and max for Sf
+    x1 = a;
+    y1 = Sf(x1, n, x, f, d);
+    max_y = min_y = y1;
+    for (x2 = x1 + delta_x; x2 - b < 1.e-6; x2 += delta_x) {
+      y2 = Sf(x2, n, x, f, d);
+      max_y = std::max(max_y, y2);
+      min_y = std::min(min_y, y2);
+      x1 = x2, y1 = y2;
+    }
+    x2 = b;
+    y2 = Sf(x2, n, x, f, d);
+    max_y = std::max(max_y, y2);
+    min_y = std::min(min_y, y2);
+
+    delta_y = 0.01 * (max_y - min_y);
+    min_y -= delta_y;
+    max_y += delta_y;
+
+    // draw approximated line for graph
+    x1 = a;
+    y1 = Sf(x1, n, x, f, d);
+    for (x2 = x1 + delta_x; x2 - b < 1.e-6; x2 += delta_x) {
+      y2 = Sf(x2, n, x, f, d);
+      // local coords are converted to draw coords
+      painter.drawLine (L2G(x1, y1), L2G(x2, y2));
+
+      x1 = x2, y1 = y2;
+    }
+    x2 = b;
+    y2 = Sf(x2, n, x, f, d);
+    painter.drawLine (L2G(x1, y1), L2G(x2, y2));
+
+    // draw axis
+    painter.setPen (pen_red);
+    painter.drawLine (L2G(a, 0), L2G(b, 0));
+    painter.drawLine (L2G(0, min_y), L2G(0, max_y));
+
+
+    // render function name
+    painter.setPen ("blue");
+    double max_module_f = std::max(std::abs(min_y), std::abs(max_y));
+    std::string text1 = "max|Sf| = " + std::to_string(max_module_f);
+    painter.drawText (5, 20, f_name);
+    painter.drawText(5, 40, text1.c_str());
 
     delete[] main_d;
     delete[] B;
@@ -297,13 +339,9 @@ void Window::print_warning() {
     painter.drawText(5, 60, text2.c_str());
 }
 
+
 /// render graph
 void Window::paintEvent (QPaintEvent * /* event */) {
-    if (n > 50) {
-        print_warning();
-        return;
-    }
-
     double x1, x2, y1, y2;
     double max_y, min_y;
     double delta_y;
@@ -311,9 +349,20 @@ void Window::paintEvent (QPaintEvent * /* event */) {
     QVector<double> x(n), y(n);
     max_y = std::abs(f(0.5*(a + b) + 0.5*(b - a)*cos(M_PI*0.5 / n)));
     for (int m = 1; m <= n; ++m) {
-        x[m-1] = 0.5*(a + b) + 0.5*(b - a)*cos(M_PI*0.5*(2*m - 1) / n);
-        y[m-1] = f(x[m-1]);
-        max_y = std::max(max_y, std::abs(y[m-1]));
+        x[n-m] = 0.5*(a + b) + 0.5*(b - a)*cos(M_PI*0.5*(2*m - 1) / n);
+        y[n-m] = f(x[n-m]);
+        max_y = std::max(max_y, std::abs(y[n-m]));
+    }
+
+    if (n_graph == 2) {
+        // так я походу должен по равномерной сетке в этом случае, а не по нулям многочленов Чебышева
+        draw_spline(x);
+        return;
+    }
+
+    if (n > 50) {
+        print_warning();
+        return;
     }
 
     y[n/2] += p*0.1*max_y;

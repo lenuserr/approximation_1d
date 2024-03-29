@@ -110,7 +110,6 @@ int calc_i(double pt, int n, const QVector<double>& x) {
     return std::distance(x.begin(), lower) - 1;
 }
 
-
 void calc_coeff(int i, double (*f) (double), const QVector<double>& x, double* d, Spline* spline) {
     spline->c1 = f(x[i]);
     spline->c2 = d[i];
