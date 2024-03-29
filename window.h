@@ -13,8 +13,11 @@ private:
     double b;
     int n;
     int k;
+    int n_graph = 0;
+    int s = 0;
     int p = 0;
     double (*f) (double);
+    double (*df) (double);
 
 public:
     Window (QWidget *parent);
@@ -24,10 +27,16 @@ public:
 
     int parse_command_line (int argc, char *argv[]);
     void select_f();
+    void draw_residual(const QVector<double>& alpha);
+    void draw_spline(const QVector<double>& x);
+    void print_warning();
      QPointF l2g (double x_loc, double y_loc, double y_min, double y_max);
 public slots:
     void previous_func();
-    void next_func ();
+    void next_func();
+    void change_graph();
+    void increase_s();
+    void decrease_s();
     void increase_n();
     void decrease_n();
     void increase_f();

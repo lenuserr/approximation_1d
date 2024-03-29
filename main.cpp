@@ -27,6 +27,15 @@ int main (int argc, char *argv[]) {
     action = tool_bar->addAction ("&0 Next func", graph_area, SLOT (next_func ()));
     action->setShortcut (QString ("0"));
 
+    action = tool_bar->addAction ("&1 Change graph", graph_area, SLOT (change_graph ()));
+    action->setShortcut (QString ("1"));
+
+    action = tool_bar->addAction ("&2 Increase s", graph_area, SLOT (increase_s ()));
+    action->setShortcut (QString ("2"));
+
+    action = tool_bar->addAction ("&3 Decrease s", graph_area, SLOT (decrease_s ()));
+    action->setShortcut (QString ("3"));
+
     action = tool_bar->addAction ("&4 Increase n", graph_area, SLOT (increase_n ()));
     action->setShortcut (QString ("4"));
 

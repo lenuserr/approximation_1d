@@ -1,5 +1,7 @@
 #include "calc_func.h"
 
+// Chebyshev method
+
 void CalculateAlpha(int n, double a, double b,
     const QVector<double>& x, const QVector<double>& y, QVector<double>* alpha) {
 
@@ -54,4 +56,72 @@ double Pf(int n, double x, double a, double b, const QVector<double>& alpha) {
     }
 
     return Pf_x;
+}
+
+// Spline method
+
+double difference(double (*f) (double), double xi, double xj) {
+    return (f(xj) - f(xi)) / (xj - xi);
+}
+
+void construct_matrix(int n, double (*f) (double), double (*df) (double), const QVector<double>& x,
+                      double* left_d, double* main_d, double* right_d, double* b) {
+
+    main_d[0] = 1; main_d[n - 1] = 1;
+    right_d[0] = 0; left_d[n - 2] = 0;
+    for (int i = 1; i < n - 1; ++i) {
+        left_d[i - 1] = x[i+1] - x[i];
+        main_d[i] = 2*(x[i+1]-x[i-1]);
+        right_d[i] = x[i] - x[i-1];
+    }
+
+
+    b[0] = df(x[0]);
+    b[n-1] = df(x[n-1]);
+    for (int i = 1; i < n - 1; ++i) {
+        b[i] = 3*difference(f, x[i-1], x[i])*(x[i+1]-x[i]) + 3*difference(f, x[i], x[i+1])*(x[i]-x[i-1]);
+    }
+}
+
+void solution(int n, double* main_d, double* left_d, double* right_d, double* b, double* d) {
+    for (int i = 0; i < n - 1; ++i) {
+        right_d[i] /= main_d[i];
+        b[i] /= main_d[i];
+
+        main_d[i + 1] -= right_d[i] * left_d[i];
+        b[i + 1] -= b[i] * left_d[i];
+    }
+
+    d[n - 1] = b[n - 1] / main_d[n - 1];
+
+    for (int i = n - 2; i >= 0; --i) {
+        d[i] = b[i] - right_d[i] * d[i + 1];
+    }
+}
+
+int calc_i(double pt, int n, const QVector<double>& x) {
+    auto lower = std::lower_bound(x.begin(), x.end(), pt);
+    if (lower == x.begin()) {
+        return 0;
+    } else if (lower == x.end()) {
+        return n - 2;
+    }
+
+    return std::distance(x.begin(), lower) - 1;
+}
+
+
+void calc_coeff(int i, double (*f) (double), const QVector<double>& x, double* d, Spline* spline) {
+    spline->c1 = f(x[i]);
+    spline->c2 = d[i];
+    spline->c3 = (3*difference(f, x[i], x[i+1]) - 2*d[i] - d[i+1]) / (x[i+1] - x[i]);
+    spline->c4 = d[i] + d[i+1] - 2*difference(f, x[i], x[i+1]) / ((x[i] - x[i+1]) * (x[i] - x[i+1]));
+}
+
+double Sf(double pt, int n, const QVector<double>& x, double (*f) (double), double* d) {
+    int i = calc_i(pt, n, x);
+    Spline spline;
+    calc_coeff(i, f, x, d, &spline);
+
+    return spline.c1 + spline.c2*(pt-x[i]) + spline.c3*(pt-x[i])*(pt-x[i]) + spline.c4*(pt-x[i])*(pt-x[i])*(pt-x[i]);
 }
