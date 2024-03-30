@@ -134,7 +134,13 @@ void Window::select_f() {
 
 QPointF Window::l2g (double x_loc, double y_loc, double y_min, double y_max) {
     double x_gl = (x_loc - a) / (b - a) * width ();
-    double y_gl = (y_max - y_loc) / (y_max - y_min) * height ();
+    double y_gl;
+    if (std::abs(y_max - y_min) < 1e-6) {
+        y_gl = std::abs(y_min) < 1e-6 ? 0.99*height() : 0.01*height();
+    } else {
+        y_gl = (y_max - y_loc) / (y_max - y_min) * height ();
+    }
+
     return QPointF (x_gl, y_gl);
 }
 
@@ -258,8 +264,8 @@ void Window::draw_Sf(QPainter* painter, const QVector<double>& x, const QVector<
     int N = 1000;
     double delta_y, delta_x = (b - a) / N;
 
-    QPen pen_yellow(Qt::yellow, 3, Qt::SolidLine);
-    painter->setPen (pen_yellow);
+    QPen pen_blue(Qt::blue, 3, Qt::SolidLine);
+    painter->setPen (pen_blue);
 
     // calculate min and max for Sf
     x1 = a;
@@ -295,7 +301,7 @@ void Window::draw_Sf(QPainter* painter, const QVector<double>& x, const QVector<
     painter->drawLine (L2G(x1, y1), L2G(x2, y2));
 
     painter->setPen ("blue");
-    std::string text = "Spline method is yellow";
+    std::string text = "Spline method is blue";
     painter->drawText(5, 200, text.c_str());
 
     delete[] main_d;
@@ -317,7 +323,7 @@ void Window::draw_f(QPainter* painter) {
     int N = 1000;
     double delta_x = (b - a) / N;
 
-    max_y = min_y = 0;
+    max_y = min_y = f(a);
     for (x1 = a; x1 - b < 1.e-6; x1 += delta_x)
       {
         y1 = f (x1);
@@ -445,8 +451,8 @@ void Window::draw_residual_Sf(QPainter* painter, const QVector<double>& x, const
     int N = 1000;
     double delta_y, delta_x = (b - a) / N;
 
-    QPen pen_yellow(Qt::yellow, 3, Qt::SolidLine);
-    painter->setPen (pen_yellow);
+    QPen pen_blue(Qt::blue, 3, Qt::SolidLine);
+    painter->setPen (pen_blue);
 
     // calculate min and max for current function
     x1 = a;
