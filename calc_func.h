@@ -15,10 +15,10 @@ struct Spline {
     double c4;
 };
 
-double difference(double (*f) (double), double xi, double xj);
-void construct_matrix(int n, double (*f) (double), double (*df) (double), const QVector<double>& x,
+double difference(double yi, double yj, double xi, double xj);
+void construct_matrix(int n, double (*df) (double), const QVector<double>& x, const QVector<double>& y,
                       double* left_d, double* main_d, double* right_d, double* b);
 void solution(int n, double* main_d, double* left_d, double* right_d, double* b, double* d);
 int calc_i(double pt, int n, const QVector<double>& x);
-void calc_coeff(int i, double (*f) (double), const QVector<double>& x, double* d, Spline* spline);
-double Sf(double pt, int n, const QVector<double>& x, double (*f) (double), double* d);
+void calc_coeff(int i, const QVector<double>& x, const QVector<double>& y, double* d, Spline* spline);
+double Sf(double pt, int n, const QVector<double>& x, const QVector<double>& y, double* d);

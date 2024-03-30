@@ -60,11 +60,11 @@ double Pf(int n, double x, double a, double b, const QVector<double>& alpha) {
 
 // Spline method
 
-double difference(double (*f) (double), double xi, double xj) {
-    return (f(xj) - f(xi)) / (xj - xi);
+double difference(double yi, double yj, double xi, double xj) {
+    return (yj - yi) / (xj - xi);
 }
 
-void construct_matrix(int n, double (*f) (double), double (*df) (double), const QVector<double>& x,
+void construct_matrix(int n, double (*df) (double), const QVector<double>& x, const QVector<double>& y,
                       double* left_d, double* main_d, double* right_d, double* b) {
 
     main_d[0] = 1; main_d[n - 1] = 1;
@@ -79,7 +79,7 @@ void construct_matrix(int n, double (*f) (double), double (*df) (double), const 
     b[0] = df(x[0]);
     b[n-1] = df(x[n-1]);
     for (int i = 1; i < n - 1; ++i) {
-        b[i] = 3*difference(f, x[i-1], x[i])*(x[i+1]-x[i]) + 3*difference(f, x[i], x[i+1])*(x[i]-x[i-1]);
+        b[i] = 3*difference(y[i-1], y[i], x[i-1], x[i])*(x[i+1]-x[i]) + 3*difference(y[i], y[i+1], x[i], x[i+1])*(x[i]-x[i-1]);
     }
 }
 
@@ -110,17 +110,16 @@ int calc_i(double pt, int n, const QVector<double>& x) {
     return std::distance(x.begin(), lower) - 1;
 }
 
-void calc_coeff(int i, double (*f) (double), const QVector<double>& x, double* d, Spline* spline) {
-    spline->c1 = f(x[i]);
+void calc_coeff(int i, const QVector<double>& x, const QVector<double>& y, double* d, Spline* spline) {
+    spline->c1 = y[i];
     spline->c2 = d[i];
-    spline->c3 = (3*difference(f, x[i], x[i+1]) - 2*d[i] - d[i+1]) / (x[i+1] - x[i]);
-    spline->c4 = d[i] + d[i+1] - 2*difference(f, x[i], x[i+1]) / ((x[i] - x[i+1]) * (x[i] - x[i+1]));
+    spline->c3 = (3*difference(y[i], y[i+1], x[i], x[i+1]) - 2*d[i] - d[i+1]) / (x[i+1] - x[i]);
+    spline->c4 = (d[i] + d[i+1] - 2*difference(y[i], y[i+1], x[i], x[i+1])) / ((x[i] - x[i+1]) * (x[i] - x[i+1]));
 }
 
-double Sf(double pt, int n, const QVector<double>& x, double (*f) (double), double* d) {
+double Sf(double pt, int n, const QVector<double>& x, const QVector<double>& y, double* d) {
     int i = calc_i(pt, n, x);
     Spline spline;
-    calc_coeff(i, f, x, d, &spline);
-
+    calc_coeff(i, x, y, d, &spline);
     return spline.c1 + spline.c2*(pt-x[i]) + spline.c3*(pt-x[i])*(pt-x[i]) + spline.c4*(pt-x[i])*(pt-x[i])*(pt-x[i]);
 }

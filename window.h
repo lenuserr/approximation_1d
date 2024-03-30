@@ -27,9 +27,13 @@ public:
 
     int parse_command_line (int argc, char *argv[]);
     void select_f();
-    void draw_residual(const QVector<double>& alpha);
-    void draw_spline(const QVector<double>& x);
-    void print_warning();
+
+    void draw_Pf(QPainter* painter, const QVector<double>& x, const QVector<double>& y);
+    void draw_Sf(QPainter* painter, const QVector<double>& x, const QVector<double>& y);
+    void draw_f(QPainter* painter);
+    void draw_residual_Pf(QPainter* painter, const QVector<double>& x, const QVector<double>& y);
+    void draw_residual_Sf(QPainter* painter, const QVector<double>& x, const QVector<double>& y);
+
      QPointF l2g (double x_loc, double y_loc, double y_min, double y_max);
 public slots:
     void previous_func();
